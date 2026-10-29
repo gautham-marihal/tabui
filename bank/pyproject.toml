@@ -1,0 +1,22 @@
+# The bank's Python tools: the tests and the code checks (the packages are in requirements*.txt)
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = [".", "tests"]
+addopts = "-p no:cacheprovider"
+# Starlette suggests a newer HTTP client for its test client; the current one works, and is kept until that one is vetted
+filterwarnings = ["ignore:Using `httpx` with `starlette.testclient`"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py312"
+extend-exclude = ["migrations/versions"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+ignore = ["B008"]  # FastAPI declares its dependencies as default arguments
+
+[tool.ruff.lint.isort]
+known-first-party = ["bank"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # the package files gather their modules' names on purpose

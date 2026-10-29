@@ -1,0 +1,26 @@
+# The bank's database: PostgreSQL 16, on port 5434 so it never clashes with another Postgres on this machine (Weave
+# Studio's copy of the bank uses 5433).
+#   docker compose -f bank/docker-compose.yml up -d --wait      start it (data is kept in the tabui-bank-data volume)
+#   docker compose -f bank/docker-compose.yml down -v           remove it and its data
+name: tabui-bank
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: tabui-bank-db
+    environment:
+      POSTGRES_USER: ${BANK_DB_USER:-bank}
+      POSTGRES_PASSWORD: ${BANK_DB_PASSWORD:-bank}
+      POSTGRES_DB: bank
+    ports:
+      - '5434:5432'
+    volumes:
+      - tabui-bank-data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${BANK_DB_USER:-bank} -d bank']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+volumes:
+  tabui-bank-data:

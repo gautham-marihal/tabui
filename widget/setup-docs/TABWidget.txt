@@ -1,0 +1,65 @@
+"use client";
+
+import React from "react";
+import Image from "next/image";
+
+export default function TABWidget() {
+  const [showTABWidget, setShowTABWidget] = React.useState(false);
+
+  React.useEffect(() => {
+    //@ts-expect-error - TODO:. Fix this. Adding this comment to bypass vercel deploy blocker
+    window.mountTABWidget("demo-widget-container", {
+      agentId:"selfcarebanking"
+      width: 340,
+      height: 495,
+      livekitURL: "livekit-web-sockets-url",
+      authTokenAPI: "livekit-auth-token-api-url",
+    });
+  }, []);
+
+  const toggleTABWidget = () => {
+    setShowTABWidget((prevState) => !prevState);
+  };
+
+  return (
+    <div>
+      <div
+        id="demo-widget-container"
+        style={{
+          position: "fixed",
+          right: 80,
+          bottom: 30,
+          display: "grid",
+          placeItems: "center",
+          zIndex: 100,
+          visibility: showTABWidget ? "visible" : "hidden",
+        }}
+      >
+        &nbsp;
+      </div>
+
+      <div
+        id="tab-icon"
+        onClick={toggleTABWidget}
+        style={{
+          backgroundColor: "#732b90",
+          borderRadius: "50%",
+          padding: 9,
+          cursor: "pointer",
+          position: "fixed",
+          right: 20,
+          bottom: 20,
+          display: "grid",
+          placeItems: "center",
+        }}
+      >
+        <Image
+          src="/images/chat-icon.webp"
+          alt="Launch Tetherfi Assist Bot"
+          height={30}
+          width={30}
+        />
+      </div>
+    </div>
+  );
+}

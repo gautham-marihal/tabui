@@ -1,0 +1,86 @@
+.main-content {
+  main {
+    max-width: 1440px;
+
+    .hero-banner {
+      height: 50vh;
+      width: 100%;
+
+      background-color: #b063bf;
+      color: white;
+
+      border-radius: 20px;
+
+      padding: 15px;
+
+      display: grid;
+      place-items: center;
+    }
+
+    .cards-section {
+      margin-top: 20px;
+
+      display: grid;
+      grid-gap: 20px;
+
+      grid-template-columns: 1fr;
+      @media (min-width: 769px) {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      @media (min-width: 1025px) {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+
+    .card-article {
+      // background-color: #f9dffe;
+      background-color: #eee;
+
+      padding: 15px;
+
+      border-radius: 10px;
+
+      .card-heading-1 {
+        font-weight: bold;
+        font-size: 20px;
+
+        margin-bottom: 12px;
+
+        text-align: center;
+      }
+
+      .card-heading-2 {
+        font-weight: bold;
+        font-size: 14px;
+
+        margin-top: 12px;
+        margin-bottom: 3px;
+      }
+
+      .card-heading-3 {
+        font-weight: bold;
+        font-size: 16px;
+
+        margin-top: 30px;
+        margin-bottom: 5px;
+      }
+
+      .card-text {
+        font-size: 14px;
+        line-height: 1.7;
+      }
+
+      ul {
+        list-style: none;
+
+        li {
+          list-style-type: square;
+          margin-left: 20px;
+
+          margin-bottom: 5px;
+        }
+      }
+    }
+  }
+}
