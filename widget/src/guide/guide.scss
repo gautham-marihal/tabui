@@ -1,0 +1,868 @@
+// The guide page behind the chat widget (GuidePage.tsx). Everything is under .guide so the widget's own styles are untouched.
+
+.guide {
+  --g-bg: #f7f5fa;
+  --g-panel: #ffffff;
+  --g-ink: #1d1626;
+  --g-muted: #5f566b;
+  --g-line: #e6e0ee;
+  --g-brand: #732b90;
+  --g-brand-ink: #ffffff;
+  --g-brand-soft: #f3e9f8;
+  --g-yes: #17663a;
+  --g-yes-soft: #e8f6ee;
+  --g-no: #a1262f;
+  --g-no-soft: #fcecee;
+  --g-code: #f1edf6;
+  --g-shadow: 0 1px 2px rgba(29, 22, 38, 0.06), 0 8px 24px rgba(29, 22, 38, 0.06);
+
+  min-height: 100vh;
+  background: var(--g-bg);
+  color: var(--g-ink);
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  text-align: left;
+  padding: 0 16px 120px;
+
+  @media (prefers-color-scheme: dark) {
+    --g-bg: #120e17;
+    --g-panel: #1b1622;
+    --g-ink: #f2eef7;
+    --g-muted: #b3a9c0;
+    --g-line: #2f2739;
+    --g-brand: #c98be6;
+    --g-brand-ink: #1b1124;
+    --g-brand-soft: #2c1d38;
+    --g-yes: #7fd8a2;
+    --g-yes-soft: #142a1d;
+    --g-no: #f19aa1;
+    --g-no-soft: #2e1619;
+    --g-code: #261f2f;
+    --g-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  > * {
+    max-width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+  }
+
+  a {
+    color: var(--g-brand);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  code {
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 0.88em;
+    background: var(--g-code);
+    border-radius: 6px;
+    padding: 1px 6px;
+    overflow-wrap: anywhere;
+  }
+
+  button,
+  input {
+    font: inherit;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--g-brand);
+    outline-offset: 2px;
+  }
+}
+
+.gTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 18px 0;
+
+  nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 18px;
+
+    a {
+      color: var(--g-muted);
+      text-decoration: none;
+      font-size: 14px;
+
+      &:hover {
+        color: var(--g-ink);
+      }
+    }
+  }
+}
+
+.gBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.gLogo {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--g-brand);
+  color: var(--g-brand-ink);
+  font-weight: 800;
+}
+
+.gHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+  padding: 40px 0 56px;
+
+  h1 {
+    font-size: clamp(30px, 4.2vw, 46px);
+    margin: 10px 0 14px;
+  }
+
+  @media (max-width: 860px) {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    padding-top: 16px;
+  }
+}
+
+.gLead {
+  font-size: 17px;
+  color: var(--g-muted);
+  max-width: 54ch;
+}
+
+.gEyebrow {
+  display: inline-block;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--g-brand);
+}
+
+.gActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.gButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid var(--g-line);
+  background: var(--g-panel);
+  color: var(--g-ink);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none !important;
+
+  &:hover {
+    border-color: var(--g-brand);
+  }
+}
+
+.gPrimary {
+  background: var(--g-brand);
+  border-color: var(--g-brand);
+  color: var(--g-brand-ink);
+
+  &:hover {
+    filter: brightness(1.08);
+  }
+}
+
+.gLink {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--g-brand);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+// the example conversation in the hero
+.gPhone {
+  background: var(--g-panel);
+  border: 1px solid var(--g-line);
+  border-radius: 20px;
+  box-shadow: var(--g-shadow);
+  overflow: hidden;
+  max-width: 420px;
+  width: 100%;
+  justify-self: center;
+}
+
+.gPhoneHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--g-line);
+
+  small {
+    display: block;
+    color: var(--g-muted);
+    font-size: 12.5px;
+  }
+}
+
+.gDot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f0c6ff, var(--g-brand) 60%, #3b1250);
+}
+
+.gBubbles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px;
+
+  p {
+    max-width: 85%;
+    margin: 0;
+    padding: 9px 13px;
+    border-radius: 14px;
+    font-size: 14px;
+  }
+}
+
+.gBot {
+  align-self: flex-start;
+  background: var(--g-code);
+  border-bottom-left-radius: 4px !important;
+}
+
+.gMe {
+  align-self: flex-end;
+  background: var(--g-brand);
+  color: var(--g-brand-ink);
+  border-bottom-right-radius: 4px !important;
+}
+
+.gSection {
+  padding: 40px 0;
+  border-top: 1px solid var(--g-line);
+}
+
+.gSectionHead {
+  max-width: 70ch;
+  margin-bottom: 22px;
+
+  h2 {
+    font-size: clamp(22px, 2.6vw, 28px);
+    margin: 6px 0 8px;
+  }
+
+  p {
+    color: var(--g-muted);
+    margin: 0;
+  }
+}
+
+.gCard {
+  background: var(--g-panel);
+  border: 1px solid var(--g-line);
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: var(--g-shadow);
+  min-width: 0;
+
+  h3 {
+    font-size: 16.5px;
+    margin: 0 0 6px;
+  }
+
+  p {
+    margin: 0;
+    color: var(--g-muted);
+  }
+}
+
+.gIcon {
+  color: var(--g-brand);
+  margin-bottom: 10px;
+}
+
+.gGrid3,
+.gGrid2,
+.gTables {
+  display: grid;
+  gap: 16px;
+}
+
+.gGrid3,
+.gTables {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gGrid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 900px) {
+  .gGrid3,
+  .gGrid2,
+  .gTables {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gSteps {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  counter-reset: step;
+
+  li {
+    counter-increment: step;
+    background: var(--g-panel);
+    border: 1px solid var(--g-line);
+    border-radius: 14px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    &::before {
+      content: counter(step);
+      display: grid;
+      place-items: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--g-brand-soft);
+      color: var(--g-brand);
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+
+    span {
+      color: var(--g-muted);
+    }
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gYes,
+.gNo {
+  h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  ul {
+    margin: 10px 0 0;
+    padding: 0;
+    list-style: none;
+    display: grid;
+    gap: 9px;
+  }
+
+  li {
+    padding-left: 16px;
+    position: relative;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.62em;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.5;
+    }
+  }
+}
+
+.gYes h3 {
+  color: var(--g-yes);
+}
+
+.gNo h3 {
+  color: var(--g-no);
+}
+
+.gYes {
+  border-top: 3px solid var(--g-yes);
+}
+
+.gNo {
+  border-top: 3px solid var(--g-no);
+}
+
+.gAsk {
+  margin-top: 24px;
+
+  h3 {
+    font-size: 16px;
+    margin: 0 0 10px;
+  }
+
+  .gMuted {
+    margin-top: 12px;
+  }
+}
+
+.gChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  .gCopy code {
+    background: none;
+    font-family: inherit;
+    font-size: 14px;
+    padding: 0;
+  }
+
+  .gCopy {
+    border-radius: 999px;
+    padding: 6px 14px;
+  }
+}
+
+.gCopy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--g-line);
+  background: var(--g-panel);
+  color: var(--g-ink);
+  border-radius: 8px;
+  padding: 4px 8px;
+  cursor: pointer;
+
+  code {
+    padding: 0;
+    background: none;
+    font-size: 14px;
+  }
+
+  svg {
+    color: var(--g-muted);
+    flex: none;
+  }
+
+  &:hover {
+    border-color: var(--g-brand);
+  }
+}
+
+.gMuted {
+  color: var(--g-muted);
+}
+
+.gToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.gSearch {
+  flex: 1 1 260px;
+  min-height: 42px;
+  border: 1px solid var(--g-line);
+  border-radius: 10px;
+  padding: 0 14px;
+  background: var(--g-panel);
+  color: var(--g-ink);
+}
+
+.gPills {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--g-line);
+  border-radius: 10px;
+  background: var(--g-panel);
+
+  button {
+    border: 0;
+    background: none;
+    color: var(--g-muted);
+    border-radius: 7px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-weight: 600;
+
+    &.on {
+      background: var(--g-brand-soft);
+      color: var(--g-brand);
+    }
+  }
+}
+
+.gTableWrap {
+  overflow-x: auto;
+  background: var(--g-panel);
+  border: 1px solid var(--g-line);
+  border-radius: 14px;
+  box-shadow: var(--g-shadow);
+}
+
+.gTable {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 640px;
+
+  th,
+  td {
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--g-line);
+    vertical-align: top;
+  }
+
+  th {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--g-muted);
+  }
+
+  tbody tr:last-child td {
+    border-bottom: 0;
+  }
+}
+
+.gFlag {
+  display: block;
+  color: var(--g-muted);
+  font-size: 13px;
+}
+
+.gAccounts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  span {
+    color: var(--g-muted);
+  }
+}
+
+.gNotice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--g-no-soft);
+  color: var(--g-no);
+
+  p {
+    margin: 0;
+  }
+}
+
+.gTableCard {
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--g-brand);
+
+    h3 {
+      margin: 0;
+    }
+
+    code {
+      font-size: 16px;
+    }
+  }
+
+  > .gMuted {
+    margin: 6px 0 4px;
+  }
+
+  h4 {
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--g-muted);
+    margin: 16px 0 8px;
+  }
+}
+
+.gColumns {
+  margin: 0;
+  display: grid;
+  gap: 8px;
+
+  dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+
+    span {
+      font-weight: 600;
+      font-size: 14px;
+    }
+  }
+
+  dd {
+    margin: 2px 0 0;
+    color: var(--g-muted);
+    font-size: 13.5px;
+  }
+}
+
+.gMethods {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+
+  div {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  small {
+    display: block;
+    color: var(--g-muted);
+    font-size: 13.5px;
+    margin-top: 2px;
+  }
+}
+
+.gTag {
+  display: inline-block;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--g-yes-soft);
+  color: var(--g-yes);
+}
+
+.gApi {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+
+  pre {
+    margin: 0;
+    background: var(--g-code);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    overflow-x: auto;
+  }
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gFoot {
+  border-top: 1px solid var(--g-line);
+  padding-top: 24px;
+  color: var(--g-muted);
+  font-size: 13.5px;
+}
+
+// ---- motion: sections fade up as they come into view (GuidePage's useReveal), and what can be pressed answers the
+// pointer. None of it for people who ask for less motion.
+@media (prefers-reduced-motion: no-preference) {
+  .guide.gMoving {
+    .gSection,
+    .gHero {
+      opacity: 0;
+      transform: translateY(14px);
+      transition:
+        opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .gIn {
+      opacity: 1;
+      transform: none;
+    }
+
+    // the cards of a section arrive one after another
+    .gIn .gGrid3 > *,
+    .gIn .gGrid2 > *,
+    .gIn .gTables > *,
+    .gIn .gSteps > * {
+      animation: gRise 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+    }
+
+    @for $i from 2 through 4 {
+      .gIn :is(.gGrid3, .gGrid2, .gTables, .gSteps) > :nth-child(#{$i}) {
+        animation-delay: #{($i - 1) * 70}ms;
+      }
+    }
+  }
+
+  // the example conversation types itself out
+  .guide.gMoving .gIn .gBubbles p {
+    animation: gRise 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  }
+
+  @for $i from 2 through 7 {
+    .guide.gMoving .gIn .gBubbles p:nth-child(#{$i}) {
+      animation-delay: #{($i - 1) * 260}ms;
+    }
+  }
+
+  .gCard,
+  .gSteps li {
+    transition:
+      transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .gCard:hover,
+  .gSteps li:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--g-brand) 35%, var(--g-line));
+  }
+
+  .gButton,
+  .gCopy,
+  .gPills button {
+    transition:
+      transform 0.12s ease,
+      border-color 0.15s ease,
+      background-color 0.15s ease,
+      filter 0.15s ease;
+
+    &:active {
+      transform: scale(0.97);
+    }
+  }
+
+  .gCopy svg {
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .gCopy:active svg {
+    transform: scale(1.25);
+  }
+
+  .gTable tbody tr {
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background: color-mix(in srgb, var(--g-brand) 5%, transparent);
+    }
+  }
+}
+
+@keyframes gRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+// one card per agent in the chat's list, then what none of them do
+.gAgents {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gAgent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+  h3 {
+    color: var(--g-ink);
+    margin: 0;
+  }
+
+  ul {
+    flex: 1;
+  }
+
+  .gChips {
+    margin-top: 16px;
+  }
+}
+
+.gNote {
+  margin-top: 16px;
+}
+
+// other test logins, under the customers table
+.gLogins {
+  margin-top: 16px;
+
+  h3 {
+    margin: 0 0 4px;
+  }
+
+  .gTable {
+    margin-top: 12px;
+    min-width: 0;
+  }
+}

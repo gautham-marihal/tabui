@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MdChat, MdClose } from "react-icons/md";
 
 // Local dev-mode only: mirrors the icon-toggle pattern setup-docs/TABWidget.txt expects the
@@ -7,10 +7,28 @@ import { MdChat, MdClose } from "react-icons/md";
 // so opening/closing never drops the call.
 export default function DevHarness({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  // the guide page's "Open the chat" buttons
+  useEffect(() => {
+    const show = () => setOpen(true);
+    window.addEventListener("tab-open-chat", show);
+    return () => window.removeEventListener("tab-open-chat", show);
+  }, []);
+  // the panel fades in as it opens (not for people who ask for less motion); opacity only, because a transform would move
+  // anything fixed inside the widget. Closing stays instant, so the call's controls never linger.
+  const panel = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = panel.current;
+    if (!open || !el?.animate || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    el.animate(
+      [{ opacity: 0 }, { opacity: 1 }],
+      { duration: 220, easing: "cubic-bezier(0.16, 1, 0.3, 1)" },
+    );
+  }, [open]);
 
   return (
     <>
       <div
+        ref={panel}
         style={{
           display: open ? "block" : "none",
           position: "fixed",

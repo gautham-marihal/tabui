@@ -2,54 +2,52 @@ import Link from "next/link";
 
 import Footer from "../components/Footer";
 import Header from "../components/Header";
-import { bankFetch, CrmNotConfigured } from "@/lib/crm";
+import { bankCall, CrmNotConfigured, type Row } from "@/lib/crm";
 
 import styles from "./page.module.scss";
 
-// The bank's CRM: its customers, and one customer's whole picture (accounts, cards, loans, cases, and what calls left
-// behind). Read on the server from the bank (BANK_API_URL), so the bank's key never reaches the browser. Account and
-// card numbers come masked from the bank; a PIN or code is never shown.
+// The bank's three tables (Region DB2): its customers, and one customer's accounts and each account's transactions.
+// Read on the server from the bank (BANK_API_URL). The TPIN and OTP never leave the bank, so they are never shown.
 
 export const dynamic = "force-dynamic";
 
-type Search = { q?: string; market?: string; cif?: string };
-type Row = Record<string, string | number | boolean | null>;
-type Customer = Row & {
-  accounts: Row[];
-  cards: Row[];
-  loans: Row[];
-  direct_debits: Row[];
-  cases: Row[];
-  callbacks: Row[];
-  hand_overs: Row[];
-  service_requests: Row[];
-};
+type Search = { q?: string; phone?: string };
+type Account = { account: Row; transactions: Row[]; noTransactions?: string };
 
-const money = (value: unknown, currency = "") =>
-  typeof value === "number" ? `${currency ? `${currency} ` : ""}${value.toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
-const when = (value: unknown) => (typeof value === "string" ? new Date(value).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" }) : "");
+const money = (value: string | undefined, currency = "") =>
+  value ? `${currency ? `${currency} ` : ""}${Number(value).toLocaleString("en", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—";
 
-async function read<T>(path: string, search = ""): Promise<{ data?: T; problem?: string }> {
+async function read<T>(load: () => Promise<T>): Promise<{ data?: T; problem?: string }> {
   try {
-    const answer = await bankFetch(path, { search });
-    if (answer.status === 404) return { problem: "There is no customer with that CIF." };
-    if (answer.status !== 200) {
-      const error = (answer.body as { error?: string })?.error || `HTTP ${answer.status}`;
-      return { problem: `The bank's CRM answered with an error: ${error}.` };
-    }
-    return { data: answer.body as T };
+    return { data: await load() };
   } catch (error) {
     if (error instanceof CrmNotConfigured) return { problem: error.message };
-    return { problem: `The bank's CRM did not answer. Is the bank running? (${error instanceof Error ? error.message : "unknown error"})` };
+    return { problem: `The bank did not answer. Is it running? (${error instanceof Error ? error.message : "unknown error"})` };
   }
 }
 
+async function loadCustomer(phone: string) {
+  const details = await bankCall("customer", "getCustomerDetails", { phoneNumber: phone });
+  if (!details.rows.length) return { problem: details.failed || "Customer not found." };
+  const accounts = await bankCall("account", "getCustomerAccounts", { phoneNumber: phone });
+  const withHistory: Account[] = await Promise.all(
+    accounts.rows.map(async (account) => {
+      const history = await bankCall("transaction", "getTransactionHistory", { accountNumber: account.accountNumber });
+      return { account, transactions: history.rows, noTransactions: history.rows.length ? undefined : history.failed };
+    }),
+  );
+  return { customer: details.rows[0], accounts: withHistory };
+}
+
 export default async function CrmPage({ searchParams }: { searchParams: Promise<Search> }) {
-  const { q = "", market = "", cif = "" } = await searchParams;
-  const query = new URLSearchParams({ ...(q ? { q } : {}), ...(market ? { market } : {}) }).toString();
-  const list = await read<{ items: Row[] }>("customers", query ? `?${query}` : "");
-  const detail = cif ? await read<Customer>(`customers/${encodeURIComponent(cif)}`) : null;
-  const backTo = `/crm${query ? `?${query}` : ""}`;
+  const { q = "", phone = "" } = await searchParams;
+  const list = await read(() => bankCall("customer", "getAllCustomers"));
+  const detail = phone ? await read(() => loadCustomer(phone)) : null;
+  const needle = q.trim().toLowerCase();
+  const customers = (list.data?.rows || []).filter(
+    (c) => !needle || [c.name, c.phoneNumber, c.accountNumbers, c.email].some((value) => (value || "").toLowerCase().includes(needle)),
+  );
+  const backTo = `/crm${q ? `?${new URLSearchParams({ q })}` : ""}`;
 
   return (
     <div className={styles.page}>
@@ -58,16 +56,11 @@ export default async function CrmPage({ searchParams }: { searchParams: Promise<
         <main className={styles.main}>
           <div className={styles.intro}>
             <h1>Bank CRM</h1>
-            <p>Customers of the bank behind the phone agents, and what each call left behind. Numbers are masked; PINs and codes are never shown.</p>
+            <p>The customer, account and transaction tables behind the phone agents (Region DB2). TPINs and OTPs are never shown.</p>
           </div>
 
           <form className={styles.search} action="/crm">
-            <input name="q" defaultValue={q} placeholder="Name, CIF, or the last digits of a mobile or account" aria-label="Search customers" />
-            <select name="market" defaultValue={market} aria-label="Market">
-              <option value="">Both markets</option>
-              <option value="sg">Singapore</option>
-              <option value="my">Malaysia</option>
-            </select>
+            <input name="q" defaultValue={q} placeholder="Name, phone number, account number or email" aria-label="Search customers" />
             <button type="submit">Search</button>
           </form>
 
@@ -77,17 +70,18 @@ export default async function CrmPage({ searchParams }: { searchParams: Promise<
             {list.data && (
               <section className={styles.list} aria-label="Customers">
                 <p className={styles.count}>
-                  {list.data.items.length} {list.data.items.length === 1 ? "customer" : "customers"}
+                  {customers.length} {customers.length === 1 ? "customer" : "customers"}
                 </p>
                 <ul>
-                  {list.data.items.map((c) => {
-                    const href = `/crm?${new URLSearchParams({ ...(q ? { q } : {}), ...(market ? { market } : {}), cif: String(c.cif) })}`;
+                  {customers.map((c) => {
+                    const href = `/crm?${new URLSearchParams({ ...(q ? { q } : {}), phone: c.phoneNumber })}`;
+                    const count = c.accountNumbers ? c.accountNumbers.split(",").length : 0;
                     return (
-                      <li key={String(c.cif)} className={c.cif === cif ? styles.active : ""}>
+                      <li key={c.phoneNumber} className={c.phoneNumber === phone ? styles.active : ""}>
                         <Link href={href}>
                           <strong>{c.name}</strong>
                           <span>
-                            {c.cif} · {String(c.market).toUpperCase()} · {c.type} · {c.accounts} {c.accounts === 1 ? "account" : "accounts"}
+                            {c.phoneNumber} · {count} {count === 1 ? "account" : "accounts"}
                           </span>
                         </Link>
                       </li>
@@ -98,9 +92,10 @@ export default async function CrmPage({ searchParams }: { searchParams: Promise<
             )}
 
             <section className={styles.detail} aria-label="Customer">
-              {!cif && <p className={styles.hint}>Choose a customer to see their accounts, cards, cases and recent dealings.</p>}
+              {!phone && <p className={styles.hint}>Choose a customer to see their accounts and transactions.</p>}
               {detail?.problem && <p className={styles.problem}>{detail.problem}</p>}
-              {detail?.data && <CustomerDetail customer={detail.data} backTo={backTo} />}
+              {detail?.data?.problem && <p className={styles.problem}>{detail.data.problem}</p>}
+              {detail?.data?.customer && <CustomerDetail customer={detail.data.customer} accounts={detail.data.accounts} backTo={backTo} />}
             </section>
           </div>
         </main>
@@ -110,25 +105,18 @@ export default async function CrmPage({ searchParams }: { searchParams: Promise<
   );
 }
 
-function CustomerDetail({ customer: c, backTo }: { customer: Customer; backTo: string }) {
+function CustomerDetail({ customer: c, accounts, backTo }: { customer: Row; accounts: Account[]; backTo: string }) {
   return (
     <article>
       <div className={styles.detailHead}>
         <div>
           <h2>{c.name}</h2>
           <p>
-            {c.cif} · {String(c.market).toUpperCase()} · {c.type}
-            {c.segment ? ` · ${c.segment}` : ""}
-            {c.access_level ? ` · access ${c.access_level}` : ""}
-            {c.iq_member ? " · iQ member" : ""}
+            Phone number {c.phoneNumber} · born {c.dob} · can be deleted: {c.allowDelete === "Y" ? "yes" : "no"}
           </p>
-          {(c.contact || c.mobile) && (
-            <p>
-              {c.contact}
-              {c.contact && c.mobile ? " · " : ""}
-              {c.mobile}
-            </p>
-          )}
+          <p>
+            {c.phone} · {c.email} · {c.address}
+          </p>
         </div>
         <Link href={backTo} className={styles.close}>
           Close
@@ -137,101 +125,38 @@ function CustomerDetail({ customer: c, backTo }: { customer: Customer; backTo: s
 
       <Table
         title="Accounts"
-        rows={c.accounts}
+        rows={accounts.map(({ account }) => account)}
         columns={[
-          ["Account", (r) => r.number],
-          ["Product", (r) => r.product],
-          ["Balance", (r) => money(r.ledger_balance, String(r.currency))],
-          ["Available", (r) => (r.available_balance === null ? "—" : money(r.available_balance, String(r.currency)))],
-          ["Status", (r) => r.status],
+          ["Account number", (r) => r.accountNumber],
+          ["Type", (r) => r.accountType],
+          ["Balance", (r) => money(r.balance, r.currency)],
         ]}
       />
-      <Table
-        title="Cards"
-        rows={c.cards}
-        columns={[
-          ["Card", (r) => r.number],
-          ["Product", (r) => r.product],
-          ["Status", (r) => r.status],
-          ["Limit", (r) => money(r.limit)],
-          ["Owed", (r) => money(r.balance)],
-          ["Due", (r) => r.due],
-        ]}
-      />
-      <Table
-        title="Loans"
-        rows={c.loans}
-        columns={[
-          ["Loan", (r) => r.id],
-          ["Product", (r) => r.product],
-          ["Monthly", (r) => money(r.monthly)],
-          ["Next due", (r) => r.due],
-        ]}
-      />
-      <Table
-        title="Direct debits"
-        rows={c.direct_debits}
-        columns={[
-          ["Mandate", (r) => r.id],
-          ["Merchant", (r) => r.merchant],
-          ["Amount", (r) => money(r.amount)],
-          ["Status", (r) => r.status],
-        ]}
-      />
-      <Table
-        title="Open cases"
-        rows={c.cases}
-        columns={[
-          ["Case", (r) => r.id],
-          ["Topic", (r) => r.topic],
-          ["Account", (r) => r.account],
-          ["Service manager", (r) => r.service_manager],
-        ]}
-      />
-      <Table
-        title="Hand-overs to people"
-        rows={c.hand_overs}
-        columns={[
-          ["Reference", (r) => r.id],
-          ["Queue", (r) => r.queue],
-          ["Why", (r) => r.reason],
-          ["Summary for the person", (r) => r.summary],
-          ["When", (r) => when(r.at)],
-        ]}
-      />
-      <Table
-        title="Call-backs"
-        rows={c.callbacks}
-        columns={[
-          ["Reference", (r) => r.id],
-          ["Number", (r) => r.number],
-          ["Reason", (r) => r.reason],
-          ["Status", (r) => r.status],
-          ["When", (r) => when(r.at)],
-        ]}
-      />
-      <Table
-        title="Service requests"
-        rows={c.service_requests}
-        columns={[
-          ["Request", (r) => r.id],
-          ["Type", (r) => r.type],
-          ["Notes", (r) => r.notes],
-          ["When", (r) => when(r.at)],
-        ]}
-      />
+      {accounts.map(({ account, transactions, noTransactions }) => (
+        <Table
+          key={account.accountNumber}
+          title={`Transactions on ${account.accountNumber}`}
+          rows={transactions}
+          empty={noTransactions}
+          columns={[
+            ["Type", (r) => r.type],
+            ["Amount", (r) => money(r.amount, account.currency)],
+            ["Description", (r) => r.description],
+          ]}
+        />
+      ))}
     </article>
   );
 }
 
-function Table({ title, rows, columns }: { title: string; rows: Row[]; columns: [string, (row: Row) => unknown][] }) {
+function Table({ title, rows, columns, empty }: { title: string; rows: Row[]; columns: [string, (row: Row) => string][]; empty?: string }) {
   return (
     <section className={styles.block}>
       <h3>
         {title} <small>({rows.length})</small>
       </h3>
       {rows.length === 0 ? (
-        <p className={styles.none}>None.</p>
+        <p className={styles.none}>{empty || "None."}</p>
       ) : (
         <div className={styles.scroll}>
           <table>
@@ -246,7 +171,7 @@ function Table({ title, rows, columns }: { title: string; rows: Row[]; columns: 
               {rows.map((row, index) => (
                 <tr key={index}>
                   {columns.map(([label, cell]) => (
-                    <td key={label}>{String(cell(row) ?? "")}</td>
+                    <td key={label}>{cell(row)}</td>
                   ))}
                 </tr>
               ))}

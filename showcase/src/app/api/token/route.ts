@@ -44,6 +44,9 @@ export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const botId = (url.searchParams.get("botId") || url.searchParams.get("agentId") || process.env.LIVEKIT_BOT_ID || "nimbus-care").trim();
   const botRef = (url.searchParams.get("ref") || process.env.LIVEKIT_BOT_REF || "development").trim();
+  // the agent's channel this visitor uses, as Weave Studio marks a session it starts: the widget talks and types, which
+  // is the agent's web voice channel (without it the agent takes its first channel, often a phone line: speech only)
+  const channel = (url.searchParams.get("channel") || process.env.LIVEKIT_BOT_CHANNEL || "web-voice").trim();
   const { livekitURL, livekitAPIKey, liveKitAPISecret } = getEnvVariables(botId);
   const headers = corsHeaders(request);
 
@@ -78,7 +81,7 @@ export async function GET(request: NextRequest) {
       canUpdateOwnMetadata: true,
     };
 
-    const token = await createToken({ identity }, grant, livekitAPIKey, liveKitAPISecret);
+    const token = await createToken({ identity, attributes: { "agent_builder.channel": channel } }, grant, livekitAPIKey, liveKitAPISecret);
     const agentName = process.env.LIVEKIT_AGENT_NAME || "agent-builder-runtime";
     const dispatchHost = livekitURL.replace(/^wss:/i, "https:").replace(/^ws:/i, "http:");
     const dispatchClient = new AgentDispatchClient(dispatchHost, livekitAPIKey, liveKitAPISecret);

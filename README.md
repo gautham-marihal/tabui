@@ -17,4 +17,4 @@ See [RUN_WIDGET.md](RUN_WIDGET.md). The widget runs on `http://localhost:5174` s
 
 ## Bank and CRM
 
-The `\bank` folder holds a made-up bank in a PostgreSQL database and its API, including a CRM. The Showcase shows it at `/crm` and serves it to other apps at `/api/crm` (with `CRM_API_KEY`); in Weave Studio, connect it under Integrations → CRM to check it, browse its records, and give agents tools to look callers up, verify them and hand them over. See [bank/README.md](bank/README.md).
+The bank behind the phone agents is Ashwin's customer, account and transaction database (Region DB2), reached with `POST /TetherfiDbRestApi/dboperations`. The Showcase shows it at `/crm` (set `BANK_API_URL` in `showcase/.env.local`), and the widget's guide page lists its test customers. In Weave Studio it is connected under Integrations → REST API.

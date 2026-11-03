@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TAB Widget: Dev Mode</title>
+    <title>Try the bank assistant</title>
 
     <style>
       :root {
-        --background: lightcoral;
+        --background: #f7f5fa;
         --foreground: #171717;
 
         --tetherfi-brand-color: #732b90;
@@ -44,16 +44,26 @@
         margin: 0 auto;
       }
 
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #120e17;
+        }
+      }
+
       #tabui-development-app-root {
         text-align: center;
       }
     </style>
   </head>
   <body>
+    <!-- the guide to trying the bank assistant (src/guide); the widget opens over it, bottom right -->
+    <main id="tabui-guide-root"></main>
     <section>
       <div id="tabui-development-app-root"></div>
     </section>
 
     <script type="module" src="/src/main.tsx"></script>
+    <!-- its own entry, so the widget bundle (vite build: src/main.tsx) never carries the guide -->
+    <script type="module" src="/src/guide/main.tsx"></script>
   </body>
 </html>
