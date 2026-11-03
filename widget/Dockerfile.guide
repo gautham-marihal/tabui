@@ -1,0 +1,16 @@
+# The guide page (http://localhost:5174): the page to try the bank agents, with the chat widget and the live table of
+# test customers. It is the widget's own dev server (Vite), as on a developer's machine, because the page's /bank-api
+# route lives in that server (vite.config.ts). Built from the widget folder; started by docker-compose.yml's `guide`.
+# Its settings come from the environment when it starts (VITE_LIVEKIT_URL, VITE_LIVEKIT_TOKEN_API, VITE_AGENT_ID,
+# VITE_AGENT_REF, BANK_API_URL, GUIDE_ALLOWED_HOSTS).
+FROM node:22-slim
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY . .
+ENV VITE_ENVIRONMENT=local
+# the dev server writes a small file next to vite.config.ts and its cache in node_modules/.vite
+RUN chown -R node:node /app
+USER node
+EXPOSE 5174
+CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "5174", "--strictPort"]

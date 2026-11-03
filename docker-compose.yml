@@ -1,0 +1,81 @@
+# tabui in Docker.
+#   1. cp .env.example .env        and fill it in (LiveKit, the Agent Builder API and key, the bank database)
+#   2. docker compose up --build -d → the guide page on http://localhost:5174 (try the agents there) and the
+#      showcase, which serves the chat's agents and tokens, on http://localhost:3000
+# On a server (see DEPLOY.md):
+#   docker compose --profile https up --build -d → the showcase on https://SHOWCASE_DOMAIN (Caddy gets the certificate);
+#   open ports 80 and 443 only. Browsers give a page the microphone only over HTTPS (or on localhost).
+# Extra:
+#   docker compose --profile widget up --build -d → the widget's own host page (nginx) on http://localhost:8081
+
+services:
+  showcase:
+    build:
+      context: .
+      dockerfile: showcase/Dockerfile
+      args:
+        NEXT_PUBLIC_LK_TOKEN_ENDPOINT: ${NEXT_PUBLIC_LK_TOKEN_ENDPOINT:-}
+        NEXT_PUBLIC_NIGERIA_ENERGY_BOT_LIVEKIT_URL: ${NEXT_PUBLIC_NIGERIA_ENERGY_BOT_LIVEKIT_URL:-}
+        NEXT_PUBLIC_AUSBANK_LIVEKIT_URL: ${NEXT_PUBLIC_AUSBANK_LIVEKIT_URL:-}
+        NEXT_PUBLIC_AUTOCOMPANY_LIVEKIT_URL: ${NEXT_PUBLIC_AUTOCOMPANY_LIVEKIT_URL:-}
+        NEXT_PUBLIC_SCBANK_DATA_API: ${NEXT_PUBLIC_SCBANK_DATA_API:-}
+        NEXT_PUBLIC_SELFCAREBANK_LIVEKIT_URL: ${NEXT_PUBLIC_SELFCAREBANK_LIVEKIT_URL:-}
+        NEXT_PUBLIC_SH_LIVEKIT_URL: ${NEXT_PUBLIC_SH_LIVEKIT_URL:-}
+        NEXT_PUBLIC_SINGHEALTH_LIVEKIT_URL: ${NEXT_PUBLIC_SINGHEALTH_LIVEKIT_URL:-}
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY:-}
+    image: tab-showcase:latest
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "${SHOWCASE_PORT:-3000}:3000"
+    restart: unless-stopped
+
+  # the guide page you try the agents on (the widget's dev page, with the live table of test customers)
+  guide:
+    build:
+      context: ./widget
+      dockerfile: Dockerfile.guide
+    image: tab-guide:latest
+    environment:
+      VITE_LIVEKIT_URL: ${LIVEKIT_URL:-}
+      VITE_LIVEKIT_TOKEN_API: ${GUIDE_TOKEN_API:-http://localhost:3000}
+      VITE_AGENT_ID: ${LIVEKIT_BOT_ID:-sg-business-banking}
+      VITE_AGENT_REF: ${LIVEKIT_BOT_REF:-development}
+      BANK_API_URL: ${BANK_API_URL:-http://16.79.174.151:3322}
+      GUIDE_ALLOWED_HOSTS: ${GUIDE_ALLOWED_HOSTS:-}
+    ports:
+      - "${GUIDE_PORT:-5174}:5174"
+    depends_on: [showcase]
+    restart: unless-stopped
+
+  widget:
+    profiles: [widget]
+    build: ./widget
+    image: tab-widget:latest
+    environment:
+      ADA_AGENT_ID: ${ADA_AGENT_ID:-sg-business-banking}
+      ADA_LIVEKIT_URL: ${LIVEKIT_URL:-}
+      ADA_AUTH_TOKEN_API: ${ADA_AUTH_TOKEN_API:-http://localhost:3000}
+    ports:
+      - "${WIDGET_PORT:-8081}:80"
+    restart: unless-stopped
+
+  caddy:
+    profiles: [https]
+    image: caddy:2.8-alpine
+    depends_on: [showcase]
+    environment:
+      SHOWCASE_DOMAIN: ${SHOWCASE_DOMAIN:-localhost}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

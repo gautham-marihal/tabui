@@ -2,6 +2,10 @@
 
 This repository contains two projects: `Widget` and `Showcase`.
 
+## Run with Docker
+
+`cp .env.example .env`, fill it in, then `docker compose up --build -d`: the guide page to try the agents on http://localhost:5174, and the showcase (it serves the chat's agents and tokens) on http://localhost:3000. On a server with HTTPS (needed for voice), see [DEPLOY.md](DEPLOY.md).
+
 ## Widget
 
 The source code for the TAB Widget, designed to be integrated into any website is in `\widget` folder.

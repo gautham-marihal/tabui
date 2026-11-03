@@ -4,7 +4,7 @@
 # reconfiguring which bot/server this points at is a restart, not a rebuild. Contrast with
 # showcase's Next.js build, where NEXT_PUBLIC_* really is build-time only.
 
-FROM node:20-slim AS build
+FROM node:22-slim AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci

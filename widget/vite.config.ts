@@ -60,6 +60,8 @@ export default defineConfig({
     host: "localhost",
     port: 5174,
     strictPort: true,
+    // the names the page may be opened on besides localhost (a server's domain, in Docker): comma separated
+    ...(process.env.GUIDE_ALLOWED_HOSTS ? { allowedHosts: process.env.GUIDE_ALLOWED_HOSTS.split(",").map((h) => h.trim()).filter(Boolean) } : {}),
   },
   build: {
     lib: {

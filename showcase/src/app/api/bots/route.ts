@@ -84,9 +84,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // WEAVE_API_KEY: when this server calls the Agent Builder API directly (Docker, Vercel), it signs in with that key.
+    // Empty when it goes through Weave Studio's own server, which adds the key itself.
+    const apiKey = process.env.WEAVE_API_KEY || "";
     const response = await fetch(endpoint, {
       method: "GET",
-      headers: { Accept: "application/json" },
+      headers: { Accept: "application/json", ...(apiKey ? { Authorization: `Bearer ${apiKey}` } : {}) },
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });

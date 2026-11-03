@@ -1,0 +1,7 @@
+# HTTPS in front of the showcase (docker compose --profile https up -d). Caddy gets and renews the certificate itself
+# for SHOWCASE_DOMAIN, which must point at this server, with ports 80 and 443 open. Browsers give a page the
+# microphone only over HTTPS, so voice calls need this on a server.
+{$SHOWCASE_DOMAIN} {
+	encode gzip
+	reverse_proxy showcase:3000
+}

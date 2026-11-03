@@ -1,0 +1,12 @@
+# What the images never take: dependencies (installed fresh), builds, secrets and local tools
+**/node_modules
+**/.next
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+**/.clerk
+**/.vercel
+.git
+**/*.log
+**/tsconfig.tsbuildinfo
